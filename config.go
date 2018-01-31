@@ -71,6 +71,12 @@ type (
 		//
 		// Defaults to false
 		DisableSubdomainPersistence bool
+
+		// FetchFromDB sets the sessions package to always fetch the session from the database.
+		// This is different from the regular behaviour of the library wherein the session details are loaded into memory after the first Start().
+
+		// Defaults to false
+		FetchFromDB bool
 	}
 )
 

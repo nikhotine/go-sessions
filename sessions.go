@@ -155,7 +155,7 @@ func (s *Sessions) Start(w http.ResponseWriter, r *http.Request) *Session {
 		return sess
 	}
 
-	sess := s.provider.Read(cookieValue, s.config.Expires)
+	sess := s.provider.Read(cookieValue, s.config.Expires, s.config.FetchFromDB)
 
 	return sess
 }
@@ -244,7 +244,7 @@ func (s *Sessions) StartFasthttp(ctx *fasthttp.RequestCtx) *Session {
 		return sess
 	}
 
-	sess := s.provider.Read(cookieValue, s.config.Expires)
+	sess := s.provider.Read(cookieValue, s.config.Expires, s.config.FetchFromDB)
 
 	return sess
 }

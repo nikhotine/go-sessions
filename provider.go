@@ -34,8 +34,8 @@ func (p *provider) RegisterDatabase(db Database) {
 	p.mu.Unlock()
 }
 
-// newSession returns a new session from sessionid
-func (p *provider) newSession(sid string, expires time.Duration) *Session {
+// getSession loads the session values from the database(if present) and returns a new session from sessionid
+func (p *provider) getSession(sid string, expires time.Duration) *Session {
 	onExpire := func() {
 		p.Destroy(sid)
 	}
@@ -132,13 +132,13 @@ func (p *provider) loadSessionFromDB(sid string) (Store, LifeTime) {
 	return store, lifetime
 }
 
-// Init creates the session  and returns it
+// Init creates a session loading the session values from the database(if present) and returns it
 func (p *provider) Init(sid string, expires time.Duration) *Session {
-	newSession := p.newSession(sid, expires)
+	sess := p.getSession(sid, expires)
 	p.mu.Lock()
-	p.sessions[sid] = newSession
+	p.sessions[sid] = sess
 	p.mu.Unlock()
-	return newSession
+	return sess
 }
 
 // UpdateExpiration update expire date of a session.
@@ -161,7 +161,15 @@ func (p *provider) UpdateExpiration(sid string, expires time.Duration) bool {
 }
 
 // Read returns the store which sid parameter belongs
-func (p *provider) Read(sid string, expires time.Duration) *Session {
+func (p *provider) Read(sid string, expires time.Duration, fromDB bool) *Session {
+	// Fetch from database.
+	// multi-process/multi-node applications may need to
+	// read the session from the database for consistent state between instances.
+	if fromDB {
+		return p.Init(sid, expires)
+	}
+
+	// Regular flow: Check in-memory in the current process
 	p.mu.Lock()
 	if sess, found := p.sessions[sid]; found {
 		sess.runFlashGC() // run the flash messages GC, new request here of existing session
